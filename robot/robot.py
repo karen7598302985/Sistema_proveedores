@@ -42,7 +42,6 @@ def leer_archivo(ruta: str) -> pd.DataFrame:
 
 
 def validar_fila(fila: dict, numero: int) -> tuple[bool, str]:
-    """Retorna (es_valida, mensaje_error)."""
     for col in COLUMNAS_REQUERIDAS:
         valor = fila.get(col, "")
         if not valor or str(valor).strip().lower() in ("nan", "none", ""):
