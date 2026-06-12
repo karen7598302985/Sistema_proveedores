@@ -36,11 +36,10 @@ if os.path.isdir(FRONTEND_DIR):
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")   # evita bloqueos en escrituras concurrentes
+    conn.execute("PRAGMA journal_mode=WAL;")  
     return conn
 
 def init_db():
-    """Crea las tablas si no existen, leyendo el schema SQL."""
     conn = get_db()
     with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
         conn.executescript(f.read())
@@ -85,11 +84,10 @@ class InsercionMasivaPayload(BaseModel):
     archivo_id: int
     proveedores: List[ProveedorMasivo]
 
-#inicio
 @app.on_event("startup")
 def startup():
     init_db()
-    print("✅  Base de datos inicializada correctamente.")
+    print("Base de datos inicializada correctamente.")
 
 def row_to_dict(row: sqlite3.Row) -> dict:
     d = dict(row)
@@ -130,7 +128,6 @@ def crear_proveedor_manual(data: ProveedorManual):
 
 @app.post("/api/proveedores/upload-archivo", status_code=202)
 async def subir_archivo(archivo: UploadFile = File(...)):
-    """Recibe el Excel/CSV y lo deja listo para que el robot lo procese."""
     allowed = {".csv", ".xlsx", ".xls"}
     ext = os.path.splitext(archivo.filename)[1].lower()
     if ext not in allowed:
@@ -165,7 +162,6 @@ async def subir_archivo(archivo: UploadFile = File(...)):
 
 @app.get("/api/proveedores")
 def listar_proveedores():
-    """Retorna todos los proveedores para pintar la tabla en el Frontend."""
     conn = get_db()
     try:
         rows = conn.execute(
@@ -177,7 +173,6 @@ def listar_proveedores():
 
 @app.put("/api/proveedores/{proveedor_id}")
 def editar_proveedor(proveedor_id: int, data: ProveedorEdicion):
-    """Permite editar solo nombre_empresa y estado_registro."""
     conn = get_db()
     try:
         existing = conn.execute(
@@ -205,7 +200,6 @@ def editar_proveedor(proveedor_id: int, data: ProveedorEdicion):
 
 @app.get("/api/robot/archivo-pendiente")
 def obtener_archivo_pendiente():
-    """El robot consulta este endpoint para saber si hay trabajo pendiente."""
     conn = get_db()
     try:
         row = conn.execute(
@@ -228,7 +222,6 @@ def obtener_archivo_pendiente():
 
 @app.post("/api/robot/insertar-masivo", status_code=201)
 def insertar_masivo(payload: InsercionMasivaPayload):
-    """El robot envía los proveedores extraídos del archivo para insertarlos en BD."""
     conn = get_db()
     try:
         insertados = 0
@@ -266,7 +259,6 @@ def insertar_masivo(payload: InsercionMasivaPayload):
 
 @app.get("/api/proveedores/archivo-estado/{archivo_id}")
 def estado_archivo(archivo_id: int):
-    """El Frontend consulta este endpoint para mostrar el estado del archivo subido."""
     conn = get_db()
     try:
         row = conn.execute(
